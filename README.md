@@ -6,13 +6,11 @@ respects joint limits, velocity limits, and live obstacle clearance.
 
 ## Why
 
-Full motion planners and full trajectory optimizers (see
-[VLA-Optimization](https://github.com/ansh1113/VLA-Optimization), this repo's sibling)
-solve a bigger problem than needed every control step — a whole path, or a whole
-multi-waypoint trajectory. This repo only asks: *is the policy's next single action safe,
-and if not, what's the smallest fix?* That's a QP with `n_joints` variables, not
-`n_waypoints * n_joints`, so it's cheap enough to run every step instead of in the
-background.
+Full motion planners and full trajectory optimizers solve a bigger problem than needed
+every control step — a whole path, or a whole multi-waypoint trajectory. This repo only
+asks: *is the policy's next single action safe, and if not, what's the smallest fix?*
+That's a QP with `n_joints` variables, not `n_waypoints * n_joints`, so it's cheap enough
+to run every step instead of in the background.
 
 ## How it works
 
@@ -92,22 +90,13 @@ python benchmark/benchmark_latency.py --urdf path/to/robot.urdf --n-obstacles 1 
 Reports per-stage timing (distance/Jacobian, QP build, ProxQP solve) — check this against
 your own collision-checking latency before assuming it's faster.
 
-## vs. VLA-Optimization (O-VLA)
-
-| | O-VLA V4/V6 | VLA-Optim |
-|---|---|---|
-| Solves for | full trajectory | single-step correction |
-| Latency | 30ms–440ms | sub-step, benchmark to confirm |
-| Collision model | full FCL mesh | link/obstacle spheres |
-| Best for | offline repair / re-routing | online per-step reactive safety |
-
 ## Limitations
 
 - Bounding spheres, not real mesh — no self-collision either.
 - Obstacles assumed quasi-static within one control step.
 - Self-filtering (dropping the arm's own geometry from detected obstacles) is heuristic.
-- Corrects unsafe actions, doesn't route around a fully blocked goal — that's what the
-  full O-VLA optimizer is for.
+- Corrects unsafe actions, doesn't route around a fully blocked goal — that needs a full
+  replanner, not a per-step filter.
 - Fails safe: an infeasible QP returns zero velocity, never an unfiltered command.
 
 ## License
