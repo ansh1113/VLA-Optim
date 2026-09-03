@@ -14,4 +14,5 @@ robots/
 # local calibration / results, don't commit real rig data by accident
 config/camera_extrinsics.local.yaml
 benchmark/results/
+sim/output/
 .DS_Store

@@ -99,6 +99,11 @@ while running:
 
 Full two-thread pattern (policy + filter at independent rates): `examples/integrate_with_policy_loop.py`.
 
+Want to actually watch it work with no hardware at all? `sim/run_sim_demo.py` runs the
+same fixed "policy" command twice against a MuJoCo-rendered arm, once applied directly,
+once through the filter, and saves both as GIFs so avoidance vs. collision is visible,
+not asserted (`pip install -r sim/requirements.txt` first).
+
 ## Benchmark
 
 ```bash
