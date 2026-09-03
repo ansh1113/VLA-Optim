@@ -14,16 +14,24 @@ to run every step instead of in the background.
 
 ## How it works
 
-Each tracked link is a sphere at a URDF frame. Each obstacle is a sphere. Pinocchio's
-forward kinematics + frame Jacobian give an exact distance and its rate of change per
-(link, obstacle) pair, so the whole safety constraint is linear in the commanded joint
-velocity:
+Each tracked link and each obstacle is a sphere. Getting from a 3D obstacle position to a
+corrected joint command is 4 steps:
 
-```
-minimize    || q̇ − q̇_policy ||²
-subject to  joint position/velocity limits
-            clearance(link, obstacle) ≥ 0   for every tracked pair
-```
+1. **Position → clearance + direction.** FK gives the link's position `p_link(q)`:
+   `clearance = ||p_link − p_obstacle|| − r_link − r_obstacle`, `direction = (p_link − p_obstacle) / ||p_link − p_obstacle||`
+
+2. **Kinematics → constraint on joint velocity.** The link's Jacobian `J_v(q)` (exact, from
+   the URDF via Pinocchio) maps joint velocity to that point's Cartesian velocity, so the
+   rate of change of clearance is linear in `q̇`:
+   `d(clearance)/dt = direction · J_v(q) · q̇`
+
+3. **One safety inequality per (link, obstacle) pair:**
+   `direction · J_v(q) · q̇ ≥ −α (clearance − d_safe)` — don't let clearance shrink faster
+   than the filter can brake for.
+
+4. **QP = projection.** Minimize `‖q̇ − q̇_policy‖²` subject to all those rows plus joint/
+   velocity limits. The result is the closest joint velocity to what the policy wanted that
+   still satisfies every constraint — ProxQP solves this directly, nothing is searched.
 
 ```
 perception source (any depth sensor)          policy (PI / lerobot / any VLA)
