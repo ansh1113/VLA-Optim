@@ -5,5 +5,6 @@ scipy>=1.9
 proxsuite>=0.6
 pyyaml>=6.0
 
-# ZED SDK / pyzed is installed by the Stereolabs ZED SDK installer, not pip.
-# https://www.stereolabs.com/developers/release/
+# No depth-sensor SDK is a hard dependency of this repo -- perception.py
+# takes a plain point-cloud callback, so install whatever SDK your camera
+# needs separately and wrap it yourself.

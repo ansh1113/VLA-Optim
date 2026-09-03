@@ -1,11 +1,13 @@
 """Skeleton for the two-thread architecture: the policy runs in the
 background at its own (slow) rate, the safety filter runs in the foreground
 at a much higher rate, always reading the latest policy action and latest
-camera obstacles.
+perceived obstacles.
 
-Plug in your own `policy.predict(obs) -> qdot` and
-`get_current_joint_positions()` / `send_to_controller(qdot)` -- everything
-here is placeholder except the filter/feed wiring itself.
+Plug in your own `policy.predict(obs) -> qdot`,
+`get_current_joint_positions()` / `send_to_controller(qdot)`, and
+`get_point_cloud()` (wrapping whatever depth sensor/SDK you have -- anything
+that can hand back an (N, 3) array of points in the camera frame) --
+everything here is placeholder except the filter/feed wiring itself.
 """
 import threading
 import time
@@ -13,7 +15,7 @@ import time
 import numpy as np
 
 from vla_optim.safety_filter import RealtimeSafetyFilter
-from vla_optim.zed_perception import LiveObstacleFeed
+from vla_optim.perception import LiveObstacleFeed
 
 URDF_PATH = "path/to/robot.urdf"
 LINKS_CONFIG = "config/robot_links.yaml"
@@ -42,6 +44,13 @@ def get_observation():
     raise NotImplementedError("hook up to your policy's observation pipeline")
 
 
+def get_point_cloud() -> np.ndarray:
+    """Return the latest (N, 3) point cloud in the camera's own frame, or
+    None if no new frame is ready. Wrap whatever depth sensor/SDK you have
+    here -- this is the only sensor-specific code in the whole pipeline."""
+    raise NotImplementedError("hook up to your depth sensor of choice")
+
+
 def policy_loop():
     global _latest_action
     period = 1.0 / POLICY_RATE_HZ
@@ -56,7 +65,7 @@ def policy_loop():
 
 def safety_filter_loop():
     filt = RealtimeSafetyFilter(URDF_PATH, LINKS_CONFIG, dt=1.0 / FILTER_RATE_HZ)
-    feed = LiveObstacleFeed(CAMERA_CONFIG)
+    feed = LiveObstacleFeed(CAMERA_CONFIG, point_cloud_fn=get_point_cloud, poll_hz=30)
     feed.start()
 
     period = 1.0 / FILTER_RATE_HZ
