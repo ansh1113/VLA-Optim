@@ -6,7 +6,7 @@ respects joint limits, velocity limits, and live obstacle clearance.
 
 ## Why
 
-Full planners (MoveIt-style) and full trajectory optimizers (see
+Full motion planners and full trajectory optimizers (see
 [VLA-Optimization](https://github.com/ansh1113/VLA-Optimization), this repo's sibling)
 solve a bigger problem than needed every control step — a whole path, or a whole
 multi-waypoint trajectory. This repo only asks: *is the policy's next single action safe,
