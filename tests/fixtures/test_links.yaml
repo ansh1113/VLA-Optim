@@ -6,3 +6,25 @@ links:
     radius: 0.08
   - frame: link3
     radius: 0.08
+
+self_collision_pairs:
+  - [link2, link3]
+
+static_obstacles:
+  - center: [0.0, 0.0, -0.5]
+    radius: 0.4
+
+accel_limits: 5.0
+
+cartesian:
+  frame: link3
+  workspace_box:
+    x: [-1.0, 1.0]
+    y: [-1.0, 1.0]
+    z: [-1.0, 1.0]
+  planes: []
+
+singularity:
+  frame: link3
+  min_manipulability: 0.02
+  gain: 20.0

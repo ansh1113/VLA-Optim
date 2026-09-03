@@ -6,12 +6,11 @@
 # a handful of frames (start of arm, elbow, wrist, end-effector) rather than
 # every link -- fewer spheres = faster and more conservative.
 #
-# alpha and d_safe are shared CBF parameters (see RealtimeSafetyFilter):
-#   d_safe: minimum allowed clearance between any link sphere and any
-#           obstacle sphere, in meters.
+# d_safe / alpha are shared CBF parameters, used for both obstacle and
+# self-collision clearance:
+#   d_safe: minimum allowed clearance (meters).
 #   alpha:  how aggressively the filter brakes as clearance approaches
-#           d_safe. Higher = brakes harder/sooner, lower = lets the arm
-#           coast closer before intervening.
+#           d_safe. Higher = brakes harder/sooner.
 
 d_safe: 0.03
 alpha: 4.0
@@ -29,3 +28,39 @@ links:
     radius: 0.08
   - frame: panda_hand
     radius: 0.07
+
+# Non-adjacent link pairs to check against each other (skip physically
+# adjacent pairs -- they always overlap at the joint). Uses the same
+# d_safe/alpha as obstacle clearance.
+self_collision_pairs:
+  - [panda_link3, panda_hand]
+  - [panda_link4, panda_hand]
+
+# Fixed obstacles always present (e.g. a table or wall), in the robot base
+# frame, in addition to whatever the live perception feed reports.
+static_obstacles: []
+# - center: [0.6, 0.0, -0.05]
+#   radius: 0.5
+
+# rad/s^2, scalar applied to every joint, or a list with one value per joint.
+accel_limits: 8.0
+
+# Cartesian half-space constraints on one tracked frame's predicted position.
+# workspace_box is an axis-aligned convenience; planes are general
+# (normal . p <= offset) keep-out half-spaces, e.g. "don't go below the table".
+cartesian:
+  frame: panda_hand
+  workspace_box:
+    x: [-0.9, 0.9]
+    y: [-0.9, 0.9]
+    z: [0.0, 1.2]
+  planes: []
+  # - normal: [0, 0, -1]
+  #   offset: -0.02   # keep panda_hand's z above 0.02m
+
+# Soft bias only (not a hard constraint): nudges q_dotdot away from
+# directions that reduce manipulability once it drops below min_manipulability.
+singularity:
+  frame: panda_hand
+  min_manipulability: 0.02
+  gain: 50.0

@@ -41,18 +41,26 @@ print(f"{'n_obs':>6}  {'mean (ms)':>10}  {'median (ms)':>12}  {'p95 (ms)':>9}  {
 
 for n_obs in args.n_obstacles:
     q = np.zeros(filt.nq)
+    qdot_current = np.zeros(filt.nq)  # held fixed every call -- see note below
     qdot_pi = rng.uniform(-0.3, 0.3, size=filt.nq)
     near = filt.link_spheres(q)[-1][0]
     obstacles = make_obstacles(n_obs, near)
 
+    # Pass qdot_current explicitly and keep q fixed so every timed call is an
+    # independent, representative instance of "policy asks for this action
+    # at this state" rather than letting the filter's internal open-loop
+    # velocity state drift across hundreds of calls at an unmoving q -- that
+    # drift can wander into a genuinely hard-to-solve region and inflate the
+    # measured latency in a way that has nothing to do with real usage.
+
     # warmup so ProxQP's internal buffers/resize path isn't counted
     for _ in range(10):
-        filt.filter(q, qdot_pi, obstacles)
+        filt.filter(q, qdot_pi, obstacles, qdot_current=qdot_current)
 
     samples_ms = []
     for _ in range(args.n_iters):
         t0 = time.perf_counter()
-        filt.filter(q, qdot_pi, obstacles)
+        filt.filter(q, qdot_pi, obstacles, qdot_current=qdot_current)
         samples_ms.append((time.perf_counter() - t0) * 1000.0)
 
     samples_ms = np.array(samples_ms)

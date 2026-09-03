@@ -2,7 +2,8 @@
 
 Real-time safety filter for VLA policies on real arms. Sits between the policy and the
 controller: takes the policy's action for this step, returns the closest action that
-respects joint limits, velocity limits, and live obstacle clearance.
+respects joint/velocity/acceleration/torque limits, a Cartesian workspace region, and
+clearance to obstacles — live, static, and the robot's own other links.
 
 ## Why
 
@@ -14,24 +15,30 @@ to run every step instead of in the background.
 
 ## How it works
 
-Each tracked link and each obstacle is a sphere. Getting from a 3D obstacle position to a
-corrected joint command is 4 steps:
+The decision variable is joint *acceleration* `q̈` (torque is a function of acceleration,
+not velocity, so this is what lets torque limits sit in the same QP as everything else).
+Each tracked link and each obstacle is a sphere; getting from a 3D obstacle position to a
+corrected command is 4 steps:
 
 1. **Position → clearance + direction.** FK gives the link's position `p_link(q)`:
    `clearance = ||p_link − p_obstacle|| − r_link − r_obstacle`, `direction = (p_link − p_obstacle) / ||p_link − p_obstacle||`
 
-2. **Kinematics → constraint on joint velocity.** The link's Jacobian `J_v(q)` (exact, from
-   the URDF via Pinocchio) maps joint velocity to that point's Cartesian velocity, so the
-   rate of change of clearance is linear in `q̇`:
-   `d(clearance)/dt = direction · J_v(q) · q̇`
+2. **Kinematics → constraint on acceleration.** The link's Jacobian `J_v(q)` (exact, from the
+   URDF via Pinocchio) maps joint motion to that point's Cartesian motion, so the predicted
+   clearance after one step is linear in `q̈` (`q̇_next = q̇ + q̈ dt`):
+   `d(clearance)/dt ≈ direction · J_v(q) · q̇_next`
 
-3. **One safety inequality per (link, obstacle) pair:**
-   `direction · J_v(q) · q̇ ≥ −α (clearance − d_safe)` — don't let clearance shrink faster
-   than the filter can brake for.
+3. **One safety inequality per pair** (link↔obstacle, or link↔link for self-collision):
+   `direction · J_v(q) · q̇_next ≥ −α (clearance − d_safe)` — don't let clearance shrink
+   faster than the filter can brake for. Joint/velocity/position limits, torque limits
+   (`τ = M(q) q̈ + h(q, q̇)`, from Pinocchio's rigid-body dynamics), and Cartesian workspace
+   bounds are each their own linear row in the same `q̈`.
 
-4. **QP = projection.** Minimize `‖q̇ − q̇_policy‖²` subject to all those rows plus joint/
-   velocity limits. The result is the closest joint velocity to what the policy wanted that
-   still satisfies every constraint — ProxQP solves this directly, nothing is searched.
+4. **QP = projection.** Minimize `‖q̈ − q̈_desired‖²` subject to every row above. The result
+   is the closest acceleration to what the policy's action implied that still satisfies
+   every constraint — ProxQP solves this directly, nothing is searched. Singularity
+   avoidance isn't a hard row here — it's a soft nudge added to the cost, since a hard
+   manipulability constraint would be nonconvex.
 
 ```
 perception source (any depth sensor)          policy (PI / lerobot / any VLA)
@@ -57,7 +64,10 @@ pip install -r requirements.txt
 
 ## Configure
 
-- `config/robot_links.yaml` — pick a few URDF frames, give each a bounding-sphere radius.
+- `config/robot_links.yaml` — link spheres, self-collision pairs, static/environment
+  obstacles, acceleration limits, Cartesian workspace bounds, singularity thresholds. Every
+  section is optional except `links`; see the comments in the file itself for the schema.
+  Joint position/velocity/torque limits come straight from the URDF, no config needed.
 - `config/camera_extrinsics.yaml` — sensor-to-base transform from your own hand-eye
   calibration. Shipped as identity — replace before trusting any obstacle position.
 
@@ -100,12 +110,15 @@ your own collision-checking latency before assuming it's faster.
 
 ## Limitations
 
-- Bounding spheres, not real mesh — no self-collision either.
-- Obstacles assumed quasi-static within one control step.
+- Bounding spheres, not real mesh — accurate enough to be conservative, not tight, for
+  odd-shaped or elongated links.
+- Obstacles (and self-collision pairs) assumed quasi-static within one control step.
 - Self-filtering (dropping the arm's own geometry from detected obstacles) is heuristic.
+- Singularity avoidance is a soft cost bias, not a guarantee.
 - Corrects unsafe actions, doesn't route around a fully blocked goal — that needs a full
   replanner, not a per-step filter.
-- Fails safe: an infeasible QP returns zero velocity, never an unfiltered command.
+- Fails safe: an infeasible or non-converged QP returns zero velocity, never an unfiltered
+  command.
 
 ## License
 
