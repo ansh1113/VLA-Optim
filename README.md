@@ -3,12 +3,12 @@
 Real-time safety filter for VLA policies on real arms. Sits between the policy and the
 controller: takes the policy's action for this step, returns the closest action that
 respects joint/velocity/acceleration/torque limits, a Cartesian workspace region, and
-clearance to obstacles — live, static, and the robot's own other links.
+clearance to obstacles - live, static, and the robot's own other links.
 
 ## Why
 
 Full motion planners and full trajectory optimizers solve a bigger problem than needed
-every control step — a whole path, or a whole multi-waypoint trajectory. This repo only
+every control step - a whole path, or a whole multi-waypoint trajectory. This repo only
 asks: *is the policy's next single action safe, and if not, what's the smallest fix?*
 That's a QP with `n_joints` variables, not `n_waypoints * n_joints`, so it's cheap enough
 to run every step instead of in the background.
@@ -43,7 +43,7 @@ corrected command is 4 steps:
 ```
 perception source (any depth sensor)          policy (PI / lerobot / any VLA)
         |  crop -> cluster -> spheres              |  ~8-10Hz, own thread
-        v  + self-filter vs arm pose                v
+        v  + self-filter vs arm pose               v
    LiveObstacleFeed  ------------------->  RealtimeSafetyFilter  ---> controller
                                             ~50-200Hz, reads latest
                                             q / action / obstacles every call
@@ -64,12 +64,12 @@ pip install -r requirements.txt
 
 ## Configure
 
-- `config/robot_links.yaml` — link spheres, self-collision pairs, static/environment
+- `config/robot_links.yaml`: link spheres, self-collision pairs, static/environment
   obstacles, acceleration limits, Cartesian workspace bounds, singularity thresholds. Every
   section is optional except `links`; see the comments in the file itself for the schema.
   Joint position/velocity/torque limits come straight from the URDF, no config needed.
-- `config/camera_extrinsics.yaml` — sensor-to-base transform from your own hand-eye
-  calibration. Shipped as identity — replace before trusting any obstacle position.
+- `config/camera_extrinsics.yaml`: sensor-to-base transform from your own hand-eye
+  calibration. Shipped as identity, replace before trusting any obstacle position.
 
 ## Usage
 
@@ -105,17 +105,17 @@ Full two-thread pattern (policy + filter at independent rates): `examples/integr
 python benchmark/benchmark_latency.py --urdf path/to/robot.urdf --n-obstacles 1 3 5 10
 ```
 
-Reports per-stage timing (distance/Jacobian, QP build, ProxQP solve) — check this against
+Reports per-stage timing (distance/Jacobian, QP build, ProxQP solve), check this against
 your own collision-checking latency before assuming it's faster.
 
 ## Limitations
 
-- Bounding spheres, not real mesh — accurate enough to be conservative, not tight, for
+- Bounding spheres, not real mesh, accurate enough to be conservative, not tight, for
   odd-shaped or elongated links.
 - Obstacles (and self-collision pairs) assumed quasi-static within one control step.
 - Self-filtering (dropping the arm's own geometry from detected obstacles) is heuristic.
 - Singularity avoidance is a soft cost bias, not a guarantee.
-- Corrects unsafe actions, doesn't route around a fully blocked goal — that needs a full
+- Corrects unsafe actions, doesn't route around a fully blocked goal, that needs a full
   replanner, not a per-step filter.
 - Fails safe: an infeasible or non-converged QP returns zero velocity, never an unfiltered
   command.
