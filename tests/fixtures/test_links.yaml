@@ -1,0 +1,8 @@
+d_safe: 0.03
+alpha: 4.0
+
+links:
+  - frame: link2
+    radius: 0.08
+  - frame: link3
+    radius: 0.08

@@ -1,0 +1,9 @@
+# pinocchio itself is best installed via conda-forge (see README), not pip:
+#   conda install -c conda-forge pinocchio=3.9.0
+numpy>=1.23
+scipy>=1.9
+proxsuite>=0.6
+pyyaml>=6.0
+
+# ZED SDK / pyzed is installed by the Stereolabs ZED SDK installer, not pip.
+# https://www.stereolabs.com/developers/release/

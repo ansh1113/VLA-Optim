@@ -1,0 +1,23 @@
+# Camera-to-robot-base transform (rigid, hand-eye calibration).
+#
+# PLACEHOLDER IDENTITY TRANSFORM. Do not trust obstacle positions until this
+# is replaced with your own calibration. There is no way to derive this
+# automatically -- it comes from a hand-eye calibration procedure specific
+# to how the ZED is mounted on your rig (wrist-mounted vs. fixed external
+# frame changes the procedure but not this file's format).
+#
+# translation: meters, camera origin expressed in the robot base frame.
+# rotation_quaternion: [x, y, z, w], rotates camera-frame vectors into the
+#   robot base frame.
+
+translation: [0.0, 0.0, 0.0]
+rotation_quaternion: [0.0, 0.0, 0.0, 1.0]
+
+# Workspace crop applied to the point cloud *before* clustering, in the
+# robot base frame, meters. Anything outside this box is dropped. Keep this
+# tight around the actual reachable workspace to cut down on background
+# clutter and clustering cost.
+workspace_bounds:
+  x: [-0.9, 0.9]
+  y: [-0.9, 0.9]
+  z: [-0.1, 1.2]

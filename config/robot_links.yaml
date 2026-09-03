@@ -1,0 +1,31 @@
+# Bounding-sphere model of the robot used by the safety filter.
+#
+# Each entry names a frame that must exist in your URDF (link or joint frame)
+# and a radius (meters) for a sphere centered at that frame's origin, large
+# enough to fully contain the real link geometry near that point. Start with
+# a handful of frames (start of arm, elbow, wrist, end-effector) rather than
+# every link -- fewer spheres = faster and more conservative.
+#
+# alpha and d_safe are shared CBF parameters (see RealtimeSafetyFilter):
+#   d_safe: minimum allowed clearance between any link sphere and any
+#           obstacle sphere, in meters.
+#   alpha:  how aggressively the filter brakes as clearance approaches
+#           d_safe. Higher = brakes harder/sooner, lower = lets the arm
+#           coast closer before intervening.
+
+d_safe: 0.03
+alpha: 4.0
+
+links:
+  - frame: panda_link3
+    radius: 0.10
+  - frame: panda_link4
+    radius: 0.10
+  - frame: panda_link5
+    radius: 0.09
+  - frame: panda_link6
+    radius: 0.08
+  - frame: panda_link7
+    radius: 0.08
+  - frame: panda_hand
+    radius: 0.07

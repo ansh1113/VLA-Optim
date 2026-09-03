@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# ZED / robot data
+*.svo
+*.svo2
+robots/
+*.urdf.bak
+
+# local calibration / results, don't commit real rig data by accident
+config/camera_extrinsics.local.yaml
+benchmark/results/
+.DS_Store
